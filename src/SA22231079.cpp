@@ -19,7 +19,7 @@ void f(double t, NumericVector y, NumericVector dydt, double g, double c, double
 //' @return the result of the solution
 //' @examples
 //' \dontrun{
-//' rnC = rungeKutta(t0 = 0, y0 = 0, h = 0.0002, n = 10000, g = 9.8, c = 0.5, m = 1.0)
+//' rnC = rungeKutta(t0 = 0, y0 = c(0,0) h = 0.0002, n = 10000, g = 9.8, c = 0.5, m = 1.0)
 //' }
 //' @export
 // [[Rcpp::export]]
@@ -67,7 +67,7 @@ void f2(double t, NumericVector y, NumericVector dydt, double g, double c, doubl
 //' @return the result of the solution
 //' @examples
 //' \dontrun{
-//' rnC = eulerMethod(t0 = 0, y0 = 0, h = 0.0002, n = 10000, g = 9.8, c = 0.5, m = 1.0)
+//' rnC = eulerMethod(t0 = 0, y0 = c(0,0), h = 0.0002, n = 10000, g = 9.8, c = 0.5, m = 1.0)
 //' }
 //' @export
 // [[Rcpp::export]]
