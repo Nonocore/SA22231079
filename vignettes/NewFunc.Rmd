@@ -1,0 +1,144 @@
+---
+title: "NewFunc"
+author: "SA22231079"
+date: "2023.12.05"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{NewFunc}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Overview
+My topic revolves around ion beam control and I need to simulate ion trajectories under various field effects, so solving the differential equations for the ion trajectories helps to understand the ion motion. This time, I took the opportunity of learning Rcpp to implement two simple types of numerical methods for differential equations, Euler's method and Lungkuta's method, using R and Rcpp respectively:
+
+The fourth-order Dragon Gekkuta method takes the following form
+
+$$
+\begin{cases}y_{n+1}=y_n+\frac{1}{6}\big(k_1+2k_2+2k_3+k_4\big)\\k_1=hf(x_n,y_n)\\k_2=hf(x_n+\frac{h}{2},y_n+\frac{k_1}{2})\\k_3=hf(x_n+\frac{h}{2},y_n+\frac{k_2}{2})\\k_4=hf(x_n+h,y_n+k_3)\end{cases}
+$$
+
+The forward Eulerian principle is then a simple single-step integral approximation
+$$\begin{aligned}y_{i+1}=y_i+hf(t_i,y_i)&&\end{aligned}$$
+$$
+y_{i+1}=y_i+hky_i=(1+kh)^{i+1}
+$$
+where k is the slope
+
+## Rongo Kuta
+
+
+```{r, eval=FALSE}
+#R：
+RK4 <- function(dynamics, y0, t0 = 0, tn = 1, n = 1000)
+{
+  h <- (tn-t0)/n
+  y <- matrix(0, n+1)
+  # n+1 points, n sub-intervals
+  tt <- seq(t0, tn, length.out = n+1)
+  y[1] <- y0
+  for(i in 2:(n+1))
+  {
+    k1 <- dynamics(tt[i-1], y[i-1])
+    k2 <- dynamics(tt[i-1]+0.5*h, y[i-1]+0.5*h*k1)
+    k3 <- dynamics(tt[i-1]+0.5*h, y[i-1]+0.5*h*k2)
+    k4 <- dynamics(tt[i-1]+h, y[i-1]+h*k3)
+    
+    y[i] <- y[i-1] + (h/6)*(k1+2*k2+2*k3+k4)
+  }
+  return(data.frame(time = tt, state = y))
+}
+f1 <- function(t, v) 9.8 - v^2
+v1 <- RK4(dynamics = f1, y0 = 0, tn = 1, n = 5000)
+#C++
+# library(Rcpp)
+# #include <Rcpp.h>
+# using namespace Rcpp;
+# 
+# // [[Rcpp::export]]
+# void f(double t, NumericVector y, NumericVector dydt, double g, double c, double m) {
+#   dydt[0] = y[1];
+#   dydt[1] = g - (c / m) * y[1] * y[1];
+# }
+# // [[Rcpp::export]]
+# NumericMatrix rungeKutta(double t0, NumericVector y0, double h, int n, double g, double c, double m) {
+#   int dim = y0.length();
+#   
+#   NumericMatrix y(n + 1, dim);
+#   NumericVector k1(dim), k2(dim), k3(dim), k4(dim);
+#   
+#   double t = t0;
+#   y(0, _) = y0;
+#   
+#   for (int i = 0; i < n; i++) {
+#     f(t, y(i, _), k1, g, c, m);
+#     f(t + h / 2, y(i, _) + h * k1 / 2, k2, g, c, m);
+#     f(t + h / 2, y(i, _) + h * k2 / 2, k3, g, c, m);
+#     f(t + h, y(i, _) + h * k3, k4, g, c, m);
+#     
+#     y(i + 1, _) = y(i, _) + h * (k1 + 2 * k2 + 2 * k3 + k4) / 6;
+#     
+#     t += h;
+#   }
+#   
+#   return y;
+# }
+
+```
+
+## Eulerscheme
+
+```{r, eval=FALSE}
+#R：
+EulerScheme <- function(dynamics, y0, t0 = 0, tn = 1, n = 1000)
+{
+  h <- (tn-t0)/n
+  y <- matrix(0, n+1)
+  # n+1 points, n sub-intervals
+  tt <- seq(t0, tn, length.out = n+1)
+  y[1] <- y0
+  for(i in 2:(n+1))
+  {
+    y[i] <- y[i-1] + h*dynamics(tt[i-1], y[i-1])
+  }
+  return(data.frame(time = tt, state = y))
+}
+f1 <- function(t, v) 9.8 - v^2
+v1 <- EulerScheme(dynamics = f1, y0 = 0, tn = 1, n = 5000)
+# C++
+# library(Rcpp)
+# #include <Rcpp.h>
+# using namespace Rcpp;
+# // [[Rcpp::export]]
+# void f2(double t, NumericVector y, NumericVector dydt, double g, double c, double m) {
+#   dydt[0] = y[1];
+#   dydt[1] = g - (c / m) * y[1] * y[1];
+# }
+# // [[Rcpp::export]]
+# NumericMatrix eulerMethod(double t0, NumericVector y0, double h, int n, double g, double c, double m) {
+#   int dim = y0.length();
+#   
+#   NumericMatrix y(n + 1, dim);
+#   
+#   double t = t0;
+#   y(0, _) = y0;
+#   
+#   for (int i = 0; i < n; i++) {
+#     NumericVector dydt(dim);
+#     f2(t, y(i, _), dydt, g, c, m);
+#     
+#     y(i + 1, _) = y(i, _) + h * dydt;
+#     
+#     t += h;
+#   }
+#   
+#   return y;
+# }
+
+
+```
+
