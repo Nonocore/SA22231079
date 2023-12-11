@@ -12,14 +12,14 @@ Use R package \code{microbenchmark} to compare the performance of C++ functions 
 \dontrun{
 tm1 <- microbenchmark::microbenchmark(
   rnR = RK4(dynamics = function(t, v) 9.8 - v^2, y0=0, t0 = 0, tn = 1, n = 5000),
-  rnC = rungeKutta(t0 = 0, y0 = 0, h = 0.0002, n = 10000, g = 9.8, c = 0.5, m = 1.0)
+  rnC = rungeKutta(t0 = 0, y0 = c(0,0), h = 0.0002, n = 10000, g = 9.8, c = 0.5, m = 1.0)
 )
 print(summary(tm1)[,c(1,3,5,6)])
 }
 \dontrun{
 tm1 <- microbenchmark::microbenchmark(
   rnR = EulerScheme(dynamics = function(t, v) 9.8 - v^2, y0=0, t0 = 0, tn = 1, n = 5000),
-  rnC = eulerMethod(t0 = 0, y0 = 0, h = 0.0002, n = 10000, g = 9.8, c = 0.5, m = 1.0)
+  rnC = eulerMethod(t0 = 0, y0 = c(0,0), h = 0.0002, n = 10000, g = 9.8, c = 0.5, m = 1.0)
 )
 print(summary(tm1)[,c(1,3,5,6)])
 }
